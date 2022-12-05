@@ -27,9 +27,6 @@ function getConfig()
     let env = app.node.tryGetContext('config');
     if (!env)
         throw new Error("Context variable missing on CDK command. Pass in as `-c config=XXX`");
-    let env1 = app.node.tryGetContext('config1');
-    if (!env1)
-        throw new Error("Context variable missing on CDK command. Pass in as `-c config=XXX`"+env);
 
     let commonProps = yaml.load(fs.readFileSync(path.resolve("../../typescript/0_common_config/common.yaml"), "utf8"));
     let envProps = yaml.load(fs.readFileSync(path.resolve("../../typescript/0_common_config/"+env+".yaml"), "utf8"));
@@ -51,18 +48,15 @@ function getConfig()
     return buildConfig;
 }
 
-async function Main()
-{
-    let buildConfig: BuildConfig = getConfig();
-    let stackName = buildConfig.App + "-" + buildConfig.Environment + "-vpc";
-    const vpcStack = new VpcStack(app, stackName,buildConfig,
-        {
-            env:
-                {
-                    region: buildConfig.AWSProfileRegion,
-                    account: buildConfig.AWSAccountID
-                }
-        });
-}
-Main();
+
+let buildConfig: BuildConfig = getConfig();
+let stackName = buildConfig.App + "-" + buildConfig.Environment + "-vpc";
+const vpcStack = new VpcStack(app, stackName,buildConfig,
+    {
+        env:
+            {
+                region: buildConfig.AWSProfileRegion,
+                account: buildConfig.AWSAccountID
+            }
+    });
 app.synth();

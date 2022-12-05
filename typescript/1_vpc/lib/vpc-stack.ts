@@ -7,7 +7,7 @@ export class VpcStack extends Stack {
   constructor(scope: Construct, id: string, buildConfig: BuildConfig, props?: StackProps, ) {
     super(scope, id, props);
     const vpc = new ec2.Vpc(this, 'vpc', {
-      cidr: "10.0.0.0/20",
+      ipAddresses: ec2.IpAddresses.cidr(buildConfig.Networking.VPCCidr),
       vpcName: buildConfig.App+"-"+buildConfig.Environment+"-vpc",
       subnetConfiguration: [
         {
@@ -18,7 +18,7 @@ export class VpcStack extends Stack {
         {
           cidrMask: 23,
           name: 'private',
-          subnetType: ec2.SubnetType.PRIVATE_WITH_NAT,
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
         }
      ]
    })
