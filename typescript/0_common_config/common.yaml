@@ -1,0 +1,4 @@
+---
+AWSProfileRegion: "ap-southeast-2"
+App: "eks-cdk-demo"
+Project: "Digital"

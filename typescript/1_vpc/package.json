@@ -5,7 +5,11 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "cdk-dev-diff": "tsc && cdk diff \"*\" --profile idp-sandpit2 --c config=dev",
+    "cdk-dev-deploy": "tsc && cdk deploy \"*\" --profile idp-sandpit2 --c config=dev",
+    "cdk-test-diff": "tsc && cdk diff \"*\" --profile idp-sandpit2 --c config=test",
+    "cdk-test-deploy": "tsc && cdk deploy \"*\" --profile idp-sandpit2 --c config=test"
   },
   "devDependencies": {
     "@types/jest": "^27.5.2",
@@ -20,11 +24,12 @@
     "typescript": "~3.9.7"
   },
   "dependencies": {
-    "aws-cdk-lib": "2.30.0",
+    "aws-cdk-lib": "^2.53.0",
     "console": "^0.7.2",
     "constructs": "^10.0.0",
     "fs": "^0.0.1-security",
     "load-yaml-file": "^1.0.0",
-    "source-map-support": "^0.5.21"
+    "source-map-support": "^0.5.21",
+    "TypeScript": "npm:typescript@~3.9.7"
   }
 }

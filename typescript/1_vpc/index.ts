@@ -5,7 +5,6 @@ import * as cdk from 'aws-cdk-lib';
 import { VpcStack } from './lib/vpc-stack';
 import * as fs from 'fs';
 import * as path from "path";
-import console = require('console');
 const yaml = require('js-yaml');
 
 const app = new cdk.App();
@@ -28,6 +27,9 @@ function getConfig()
     let env = app.node.tryGetContext('config');
     if (!env)
         throw new Error("Context variable missing on CDK command. Pass in as `-c config=XXX`");
+    let env1 = app.node.tryGetContext('config1');
+    if (!env1)
+        throw new Error("Context variable missing on CDK command. Pass in as `-c config=XXX`"+env);
 
     let commonProps = yaml.load(fs.readFileSync(path.resolve("../../typescript/0_common_config/common.yaml"), "utf8"));
     let envProps = yaml.load(fs.readFileSync(path.resolve("../../typescript/0_common_config/"+env+".yaml"), "utf8"));
@@ -41,6 +43,9 @@ function getConfig()
         App: ensureString(commonProps,envProps, 'App'),
         Version: ensureString(commonProps,envProps, 'Version'),
         Environment: ensureString(commonProps,envProps, 'Environment'),
+        Networking: {
+            VPCCidr: ensureString(commonProps['Networking'],envProps['Networking'], 'VPCCidr')
+        }
     };
 
     return buildConfig;
@@ -50,7 +55,6 @@ async function Main()
 {
     let buildConfig: BuildConfig = getConfig();
     let stackName = buildConfig.App + "-" + buildConfig.Environment + "-vpc";
-    console.log("Creating Stack Name "+stackName);
     const vpcStack = new VpcStack(app, stackName,buildConfig,
         {
             env:
@@ -61,3 +65,4 @@ async function Main()
         });
 }
 Main();
+app.synth();

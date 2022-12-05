@@ -6,7 +6,6 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 export class VpcStack extends Stack {
   constructor(scope: Construct, id: string, buildConfig: BuildConfig, props?: StackProps, ) {
     super(scope, id, props);
-    console.log(buildConfig.App+"-"+buildConfig.Environment+"-vpc");
     const vpc = new ec2.Vpc(this, 'vpc', {
       cidr: "10.0.0.0/20",
       vpcName: buildConfig.App+"-"+buildConfig.Environment+"-vpc",

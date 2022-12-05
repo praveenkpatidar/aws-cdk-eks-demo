@@ -1,0 +1,7 @@
+---
+AWSAccountID: "354334841216"
+AWSProfileName: "idp-sandpit2"
+Environment: "test"
+Version: "1.0.0"
+Networking:
+  VPCCidr: 10.10.0.0/20

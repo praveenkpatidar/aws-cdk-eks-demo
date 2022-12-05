@@ -8,4 +8,8 @@ export interface BuildConfig
     readonly Environment : string;
     readonly Version : string;
     readonly Project: string;
+    readonly Networking: Networking;
+}
+export interface Networking {
+    readonly VPCCidr: string;
 }
