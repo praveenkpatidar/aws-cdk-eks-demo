@@ -3,6 +3,7 @@ import { Stack, StackProps, Tags } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
+
 export class VpcStack extends Stack {
   constructor(scope: Construct, id: string, buildConfig: BuildConfig, props?: StackProps,) {
     super(scope, id, props);
