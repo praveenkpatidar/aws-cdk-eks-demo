@@ -6,22 +6,10 @@
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk",
-    "cdk-dev-diff": "tsc && cdk diff \"*\" --profile idp-sandpit2 --c config=dev",
-    "cdk-dev-deploy": "tsc && cdk deploy \"*\" --profile idp-sandpit2 --c config=dev",
-    "cdk-test-diff": "tsc && cdk diff \"*\" --profile idp-sandpit2 --c config=test",
-    "cdk-test-deploy": "tsc && cdk deploy \"*\" --profile idp-sandpit2 --c config=test"
-  },
-  "devDependencies": {
-    "@types/jest": "^27.5.2",
-    "@types/js-yaml": "^4.0.5",
-    "@types/node": "10.17.27",
-    "@types/prettier": "2.6.0",
-    "aws-cdk": "2.30.0",
-    "jest": "^27.5.1",
-    "js-yaml": "^4.1.0",
-    "ts-jest": "^27.1.4",
-    "ts-node": "^10.8.1",
-    "typescript": "~3.9.7"
+    "cdk-dev-diff": "cdk diff \"*\" --profile sandpit2 --c config=dev",
+    "cdk-dev-deploy": "cdk deploy \"*\" --profile sandpit2 --c config=dev",
+    "cdk-test-diff": "cdk diff \"*\" --profile sandpit2 --c config=test",
+    "cdk-test-deploy": "cdk deploy \"*\" --profile sandpit2 --c config=test"
   },
   "dependencies": {
     "aws-cdk-lib": "^2.53.0",
