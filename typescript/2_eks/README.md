@@ -12,3 +12,8 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 * `cdk deploy`      deploy this stack to your default AWS account/region
 * `cdk diff`        compare deployed stack with current state
 * `cdk synth`       emits the synthesized CloudFormation template
+
+# Sample commands
+aws sso login --profile sandpit2
+cdk deploy -c config=dev --profile=sandpit2 --all
+aws eks update-kubeconfig --name eks-cdk-demo-devcluster --region ap-southeast-2 --role-arn arn:aws:iam::354334841216:role/ekscdkdemodevmainekscdkde-ekscdkdemodevclusterAcces-s3Iw7wT091ff --profile sandpit2
