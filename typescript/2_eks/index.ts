@@ -8,8 +8,8 @@ const app = new cdk.App();
 
 function Main() {
   let buildConfig: BuildConfig = Utils.getConfig(app);
-  let stackName = buildConfig.App + "-" + buildConfig.Environment + "-cluster";
-  const vpcStack = new EksStack(app, stackName, buildConfig,
+  let stackName = buildConfig.App + "-" + buildConfig.Environment + "-main";
+  const eksStack = new EksStack(app, stackName, buildConfig,
     {
       env:
       {
