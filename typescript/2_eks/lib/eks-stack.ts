@@ -12,10 +12,9 @@ export class EksStack extends Stack {
     blueprints.HelmAddOn.failOnVersionValidation = false;
     const nameTag = buildConfig.App + "-" + buildConfig.Environment
     const addOns: Array<blueprints.ClusterAddOn> = [
-      new blueprints.addons.ArgoCDAddOn(),
       new blueprints.addons.AwsLoadBalancerControllerAddOn(),
       new blueprints.addons.CoreDnsAddOn(),
-      new blueprints.addons.KarpenterAddOn(),
+      //new blueprints.addons.KarpenterAddOn(),
       new blueprints.addons.KubeProxyAddOn(),
       new blueprints.addons.KubeStateMetricsAddOn(),
       new blueprints.addons.MetricsServerAddOn(),
@@ -27,7 +26,7 @@ export class EksStack extends Stack {
     })
 
     const clusterProvider = new blueprints.GenericClusterProvider({
-      version: blueprints.Version,
+      version: KubernetesVersion.V1_28,
       vpcSubnets: [{ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }],
       /*     mastersRole: blueprints.getResource(context => {
              return new Role(context.scope, nameTag + '-adminrole', { assumedBy: new AccountRootPrincipal() });
@@ -63,6 +62,12 @@ export class EksStack extends Stack {
            */
     })
 
+    const adminTeam = new blueprints.PlatformTeam({
+      name: "admin",
+      userRoleArn: "arn:aws:iam::" + buildConfig.AWSAccountID + ":role/AWSReservedSSO_AdministratorAccess_03ad70a269de0fe1"  // Need to put this in parameters
+    })
+
+
     const stack = blueprints.EksBlueprint.builder()
       .account(buildConfig.AWSAccountID)
       .region(buildConfig.AWSProfileRegion)
@@ -71,6 +76,7 @@ export class EksStack extends Stack {
       .clusterProvider(clusterProvider)
       .enableControlPlaneLogTypes(blueprints.ControlPlaneLogType.API)
       .useDefaultSecretEncryption(true) // set to false to turn secret encryption off (non-production/demo cases)
-      .build(this, "cluster");
+      .teams(adminTeam)
+      .build(this, nameTag + "cluster");
   }
 }
