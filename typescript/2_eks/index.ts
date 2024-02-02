@@ -6,17 +6,10 @@ import { BuildConfig } from "./lib/build-config";
 import Utils from './lib/utils'
 const app = new cdk.App();
 
-function Main() {
-  let buildConfig: BuildConfig = Utils.getConfig(app);
-  let stackName = buildConfig.App + "-" + buildConfig.Environment + "-main";
-  const eksStack = new EksStack(app, stackName, buildConfig,
-    {
-      env:
-      {
-        region: buildConfig.AWSProfileRegion,
-        account: buildConfig.AWSAccountID
-      }
-    });
-  app.synth();
-}
-Main();
+
+let buildConfig: BuildConfig = Utils.getConfig(app);
+let stackName = buildConfig.App + "-" + buildConfig.Environment;
+const account = buildConfig.AWSAccountID;
+const region = buildConfig.AWSProfileRegion;
+const env = { region: region, account: account }
+new EksStack(app, stackName, buildConfig, { env });
