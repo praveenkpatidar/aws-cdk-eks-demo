@@ -16,4 +16,7 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 # Sample commands
 aws sso login --profile sandpit2
 cdk deploy -c config=dev --profile=sandpit2 --all
-aws eks update-kubeconfig --name eks-cdk-demo-devcluster --region ap-southeast-2 --role-arn arn:aws:iam::354334841216:role/ekscdkdemodevmainekscdkde-ekscdkdemodevclusterAcces-s3Iw7wT091ff --profile sandpit2
+
+If master Role is working then use below command to kube config or use stack output.
+
+aws eks update-kubeconfig --name eks-cdk-demo-devcluster --region ap-southeast-2  --profile sandpit2
