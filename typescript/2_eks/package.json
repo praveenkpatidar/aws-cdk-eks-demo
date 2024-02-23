@@ -39,6 +39,7 @@
     "@types/lodash.clonedeep": "^4.5.9",
     "@types/uuid": "^9.0.7",
     "all": "^0.0.0",
+    "cdk-eks-karpenter": "^1.0.4",
     "aws-cdk-lib": "2.115.0",
     "bcrypt": "^5.1.1",
     "constructs": "^10.3.0",
