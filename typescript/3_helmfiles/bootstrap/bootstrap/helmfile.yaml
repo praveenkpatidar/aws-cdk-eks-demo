@@ -1,0 +1,12 @@
+---
+
+releases:
+  - name: bootstrap-common
+    namespace: kube-system
+    chart: ./localfolder-bootstrap/common
+
+  # if this is a new cluster, you'll need shared-secrets installed first
+  # remember each cluster has it's own private key for sealed-secrets
+  - name: bootstrap-secrets
+    namespace: kube-system
+    chart: ./localfolder-bootstrap/{{ requiredEnv "CLUSTER" }}/

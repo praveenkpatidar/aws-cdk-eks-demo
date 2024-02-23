@@ -1,0 +1,59 @@
+# prometheus-main
+
+# By convention this is AZa, and runs arm64
+
+---
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: prometheus-main
+
+spec:
+  consolidation:
+    enabled: false  # does not work on spots
+
+  kubeletConfiguration:
+    containerRuntime: containerd
+    clusterDNS: ["172.25.0.10"]  # it still gets the DNS wrong
+
+  labels:
+    creator: karpenter
+    dedicated: prometheus-main
+    eks.amazonaws.com/capacityType: ON_DEMAND
+
+  limits:
+    resources:
+      cpu: "16"
+
+  providerRef:
+    name: default-provider
+
+  taints:
+    - key: dedicated
+      value: prometheus-main
+      effect: NoSchedule
+
+  ttlSecondsAfterEmpty: 60
+  ttlSecondsUntilExpired: 2419200  # 28.0 days
+
+
+  requirements:
+    - key: karpenter.k8s.aws/instance-cpu
+      operator: Lt
+      values: ["9"]
+
+    - key: karpenter.sh/capacity-type
+      operator: In
+      values: ["on-demand"]
+
+    - key: kubernetes.io/arch
+      operator: In
+      values: ["arm64"]  # NOTE ARM
+
+    - key: kubernetes.io/os
+      operator: In
+      values: ["linux"]
+
+    - key: topology.kubernetes.io/zone
+      operator: In
+      values: ["ap-southeast-2a"]  # NOTE JUST 2a

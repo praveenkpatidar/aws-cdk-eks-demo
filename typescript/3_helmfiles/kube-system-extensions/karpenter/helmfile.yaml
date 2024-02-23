@@ -1,0 +1,34 @@
+---
+repositories:
+  - name: karpenter
+    url: public.ecr.aws/karpenter
+    oci: true  # https://helm.sh/docs/topics/registries/
+
+# load in yaml anchors for helmfiles `Release Template` feature
+{{ readFile "../../common/common.yaml" }}
+releases:
+  # load name, chart and namespace from ./versions.yaml
+  - <<: *common_releases
+
+    # This prevents helmfile exiting when it encounters a missing file
+    missingFileHandler: Warn
+    values:
+      - ./values/values-common.yaml
+      - ./values/values-{{ requiredEnv "CLUSTER" }}.yaml
+    set:
+      - name: serviceAccount.annotations.eks\.amazonaws\.com/role-arn
+        value: arn:aws:iam::{{ requiredEnv "AWS_ACCOUNT_ID" }}:role/{{ requiredEnv "CLUSTER"}}-eks-karpenter-iam-role
+      - name: serviceAccount.name
+        value: {{ requiredEnv "CLUSTER"}}-eks-karpenter-iam-role
+      - name: settings.aws.clusterEndpoint
+        value: {{ requiredEnv "CLUSTER_ENDPOINT"}}
+      - name: settings.aws.clusterName
+        value: {{ requiredEnv "CLUSTER" }}
+      - name: settings.aws.defaultInstanceProfile
+        value: arn:aws:iam::{{ requiredEnv "AWS_ACCOUNT_ID" }}:role/{{ requiredEnv "CLUSTER"}}-node-role
+      - name: settings.aws.interruptionQueueName
+        value: {{ requiredEnv "CLUSTER" }}-karpenter-interruption
+
+  - name: karpenter-provisioner
+    namespace: kube-system-extensions
+    chart: ./localfolder-karpenter-provisioner/{{ requiredEnv "CLUSTER"}}/

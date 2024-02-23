@@ -1,0 +1,7 @@
+---
+
+default:
+  release_name: "amazon-k8s-cni-k8s"
+  version: "1.2.2"
+  chart: "eks-charts/aws-vpc-cni"
+  namespace: "kube-system"

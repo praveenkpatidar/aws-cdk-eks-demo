@@ -1,0 +1,13 @@
+---
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# namespace labels are used in some alerts to exclude (i.e. preview servers)
+metricLabelsAllowlist:
+  - namespaces=[*]

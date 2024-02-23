@@ -1,0 +1,27 @@
+---
+args:
+  - '--kubelet-preferred-address-types=InternalIP'
+  - '--metric-resolution=30s'
+  - '--v=2'
+
+service:
+  labels:
+    #  Add these labels to have metrics-server show up in `kubectl cluster-info`
+    kubernetes.io/cluster-service: "true"
+    kubernetes.io/name: "Metrics-server"
+
+metrics:
+  enabled: true
+
+# HPA uses metrics-server, it is therefore critical for cluster stability
+priorityClassName: system-cluster-critical
+
+# https://github.com/kubernetes-sigs/metrics-server#scaling
+# Resource efficiency, using 1 mili core of CPU and 2 MB of memory for each node in a cluster.
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2048Mi
+  requests:
+    cpu: 200m
+    memory: 200Mi

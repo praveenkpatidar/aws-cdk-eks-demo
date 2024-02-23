@@ -1,0 +1,7 @@
+---
+
+default:
+  release_name: "karpenter"
+  version: "v0.22.1"
+  chart: "karpenter/karpenter"
+  namespace: "kube-system-extensions"

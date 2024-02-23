@@ -1,0 +1,6 @@
+---
+default:
+  release_name: "namespaces"
+  version: "1.0.0"
+  chart: "orgtform-ops-k8s-charts/namespaces"
+  namespace: default

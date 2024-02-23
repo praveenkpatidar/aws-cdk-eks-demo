@@ -1,0 +1,10 @@
+---
+
+# This file is read in as a string. So need to use quotes("") and quote-escapes(\)
+
+templates:
+  common_releases: &common_releases
+    chart: "{{ $k := print (requiredEnv \"CLUSTER\") \".chart\" }}{{ readFile \"./versions.yaml\" | fromYaml | get $k (readFile \"./versions.yaml\" | fromYaml | get \"default.chart\") }}"
+    name: "{{ $k := print (requiredEnv \"CLUSTER\") \".release_name\" }}{{ readFile \"./versions.yaml\" | fromYaml | get $k (readFile \"./versions.yaml\" | fromYaml | get \"default.release_name\") }}"
+    namespace: "{{ $k := print (requiredEnv \"CLUSTER\") \".namespace\" }}{{ readFile \"./versions.yaml\" | fromYaml | get $k (readFile \"./versions.yaml\" | fromYaml | get \"default.namespace\") }}"
+    version: "{{ $k := print (requiredEnv \"CLUSTER\") \".version\" }}{{ readFile \"./versions.yaml\" | fromYaml | get $k (readFile \"./versions.yaml\" | fromYaml | get \"default.version\") }}"

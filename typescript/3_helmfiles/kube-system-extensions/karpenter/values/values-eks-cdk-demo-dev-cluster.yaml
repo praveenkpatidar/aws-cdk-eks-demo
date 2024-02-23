@@ -1,0 +1,10 @@
+---
+settings:
+  aws:
+    tags:
+      Cluster: demo-cdk-nonprod-1
+      Creator: Karpenter
+      Department: org
+      Environment: nonprod
+      Project: demo-cdk
+      Team: DevOps

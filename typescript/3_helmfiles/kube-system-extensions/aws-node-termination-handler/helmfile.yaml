@@ -1,0 +1,17 @@
+---
+
+repositories:
+  - name: eks
+    url: https://aws.github.io/eks-charts
+
+# load in yaml anchors for helmfiles `Release Template` feature
+{{ readFile "../../common/common.yaml" }}
+releases:
+  # load name, chart and namespace from ./versions.yaml
+  - <<: *common_releases
+
+    # This prevents helmfile exiting when it encounters a missing file
+    missingFileHandler: Warn
+    values:
+      - ./values/values-common.yaml
+      - ./values/values-{{ requiredEnv "CLUSTER" }}.yaml

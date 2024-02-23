@@ -1,0 +1,31 @@
+---
+
+# TODO: As at Feb, 2023 karpenter Interruption is not working yet
+
+# https://karpenter.sh/preview/concepts/deprovisioning/#interruption
+#  Karpenter does not currently support cordon, drain, and terminate logic for Spot Rebalance Recommendations.
+
+emitKubernetesEvents: true
+enablePrometheusServer: true
+enableRebalanceDraining: true
+enableRebalanceMonitoring: true
+jsonLogging: true
+podTerminationGracePeriod: 70
+taintNode: true
+useHostNetwork: false  # requires IP hop count of 2
+
+daemonsetNodeSelector:
+  eks.amazonaws.com/capacityType: SPOT
+
+podAnnotations:
+  prometheus.io/path: /metrics
+  prometheus.io/port: "9092"
+  prometheus.io/scrape: "true"
+
+
+tolerations:
+  - key: dedicated
+    operator: "Exists"
+
+# Exclude node from load balancer before cordoning via the ServiceNodeExclusion feature gate.
+excludeFromLoadBalancers: false

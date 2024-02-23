@@ -1,0 +1,7 @@
+---
+
+default:
+  release_name: "aws-load-balancer-controller"
+  version: "1.4.7"
+  chart: "eks/aws-load-balancer-controller"
+  namespace: "kube-system-extensions"

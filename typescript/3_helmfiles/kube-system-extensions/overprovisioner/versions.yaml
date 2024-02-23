@@ -1,0 +1,22 @@
+---
+
+default:
+  release_name: "overprovisioner"
+  version: "1.3.0"
+  chart: "orgtform-ops-k8s-charts/overprovisioner"
+  namespace: "kube-system-extensions"
+
+telmeg-intg-nonprod-01:
+  version: "1.4.0"
+
+telmeg-intg-nonprod-02:
+  version: "1.4.0"
+
+platform-nonprod-02:
+  version: "1.4.0"
+
+telmeg-intg-prod-01:
+  version: "1.4.0"
+
+telmeg-intg-prod-02:
+  version: "1.4.0"

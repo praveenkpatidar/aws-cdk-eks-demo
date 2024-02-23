@@ -1,0 +1,35 @@
+---
+
+# platform-nonprod-01
+
+commandArgs:
+  - --configmap=overprovisioner
+  - --logtostderr=true
+  - --namespace=overprovisioner
+  - --target=deployment/overprovisioner-pause-pod
+  - --v=2
+
+mode: linear
+
+linear: |-
+  {
+    "coresPerReplica": 20,
+    "nodesPerReplica": 1,
+    "min": 1,
+    "max": 10,
+    "preventSinglePointFailure": true
+  }
+pausepods:
+  image:
+    repository: registry.k8s.io/pause
+    tag: 3.7
+    pullPolicy: IfNotPresent
+
+  # enough to help, but under an additional average node
+  resources:
+    requests:
+      cpu: 500m
+      memory: 4Gi
+    limits:
+      cpu: 500m
+      memory: 4Gi

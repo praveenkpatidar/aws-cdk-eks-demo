@@ -8,6 +8,7 @@ export class VpcStack extends Stack {
   constructor(scope: Construct, id: string, buildConfig: BuildConfig, props?: StackProps,) {
     super(scope, id, props);
     const vpc = new ec2.Vpc(this, 'vpc', {
+      maxAzs: 2,
       ipAddresses: ec2.IpAddresses.cidr(buildConfig.Networking.VPCCidr),
       vpcName: buildConfig.App + "-" + buildConfig.Environment + "-vpc",
       subnetConfiguration: [

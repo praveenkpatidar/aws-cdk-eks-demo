@@ -1,0 +1,7 @@
+---
+
+default:
+  release_name: "org"
+  version: "1.19.4"
+  chart: "coredns/coredns"
+  namespace: "kube-system-extensions"
