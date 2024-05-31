@@ -6,14 +6,11 @@ import * as blueprints from '@aws-quickstart/eks-blueprints';
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { KubernetesVersion, Nodegroup, NodegroupAmiType, TaintEffect } from 'aws-cdk-lib/aws-eks';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import * as eks from 'aws-cdk-lib/aws-eks';
-import * as karpenter from 'cdk-eks-karpenter';
-import { EksExtStack } from './lib/eks-ext-stack';
 
 import Utils from './lib/utils';
 const app = new cdk.App();
 
-let buildConfig: BuildConfig = Utils.getConfig(app);
+let buildConfig: BuildConfig = Utils.getBuildConfig(app);
 const account = buildConfig.AWSAccountID;
 const region = buildConfig.AWSProfileRegion;
 const env = { region: region, account: account }
@@ -25,6 +22,7 @@ const addOns: Array<blueprints.ClusterAddOn> = [
     new blueprints.addons.CoreDnsAddOn(),
     new blueprints.addons.KubeProxyAddOn(),
     new blueprints.addons.VpcCniAddOn(),
+    new blueprints.addons.EksPodIdentityAgentAddOn(),
     new blueprints.addons.KarpenterAddOn({
         values:
         {
