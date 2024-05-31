@@ -1,22 +1,24 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { BuildConfig } from "./lib/build-config";
+import { Config } from "../../0_common_config/lib/config";
+import { loadConfig } from "../../0_common_config/lib/utils";
 import * as blueprints from '@aws-quickstart/eks-blueprints';
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { KubernetesVersion, Nodegroup, NodegroupAmiType, TaintEffect } from 'aws-cdk-lib/aws-eks';
 import * as iam from 'aws-cdk-lib/aws-iam';
-
-import Utils from './lib/utils';
 const app = new cdk.App();
+const env = app.node.tryGetContext('env')
+let config: Config = loadConfig(env);
+const awsEnv = {
+    region: config.AWSProfileRegion,
+    account: config.AWSAccountID
+}
 
-let buildConfig: BuildConfig = Utils.getBuildConfig(app);
-const account = buildConfig.AWSAccountID;
-const region = buildConfig.AWSProfileRegion;
-const env = { region: region, account: account }
+
 blueprints.HelmAddOn.validateHelmVersions = true;
 blueprints.HelmAddOn.failOnVersionValidation = false;
-const nameTag = buildConfig.App + "-" + buildConfig.Environment
+const nameTag = config.App + "-" + config.Environment
 const addOns: Array<blueprints.ClusterAddOn> = [
     // keep only AWS AddOns No HelmFile based AddOns
     new blueprints.addons.CoreDnsAddOn(),
@@ -26,7 +28,7 @@ const addOns: Array<blueprints.ClusterAddOn> = [
     new blueprints.addons.KarpenterAddOn({
         values:
         {
-            replica: 1,
+            replicas: 1,
             logLevel: 'debug',
             tolerations: [
                 {
@@ -37,9 +39,9 @@ const addOns: Array<blueprints.ClusterAddOn> = [
         }
     }),
 ];
-const adminRole = "arn:aws:iam::" + buildConfig.AWSAccountID + ":role/AWSReservedSSO_AdministratorAccess_03ad70a269de0fe1"  // Need to put this in parameters
+const adminRole = "arn:aws:iam::" + config.AWSAccountID + ":role/AWSReservedSSO_AdministratorAccess_03ad70a269de0fe1"  // Need to put this in parameters
 
-const metaStack = new cdk.Stack(app, nameTag + "-vpc-metadata", { env })
+const metaStack = new cdk.Stack(app, nameTag + "-vpc-metadata", { env: awsEnv })
 
 const Vpc = ec2.Vpc.fromLookup(metaStack, nameTag + "-vpc", {
     isDefault: false,
@@ -47,7 +49,7 @@ const Vpc = ec2.Vpc.fromLookup(metaStack, nameTag + "-vpc", {
 })
 
 const clusterProvider = new blueprints.GenericClusterProvider({
-    version: KubernetesVersion.V1_28,
+    version: KubernetesVersion.V1_29,
     vpcSubnets: [{ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }],
     mastersRole: blueprints.getResource(context => {
         return new iam.Role(context.scope, 'AdminRole', { assumedBy: new iam.AccountRootPrincipal() });
@@ -67,7 +69,7 @@ const clusterProvider = new blueprints.GenericClusterProvider({
                     "Type": "Managed-Node-Group",
                     "LaunchTemplate": "Custom",
                     "Instance": "SPOT", // Should be OnDemand but for cost saving let it be Spot
-                    "Project": buildConfig.App
+                    "Project": config.App
                 }
             },
             labels: {
@@ -88,8 +90,8 @@ const platformTeam = new blueprints.PlatformTeam({
 
 
 const stack = blueprints.EksBlueprint.builder()
-    .account(buildConfig.AWSAccountID)
-    .region(buildConfig.AWSProfileRegion)
+    .account(config.AWSAccountID)
+    .region(config.AWSProfileRegion)
     .resourceProvider(blueprints.GlobalResources.Vpc, new blueprints.VpcProvider(Vpc.vpcId))
     .addOns(...addOns)
     .clusterProvider(clusterProvider)

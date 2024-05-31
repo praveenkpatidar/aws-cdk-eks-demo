@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { loadConfig } from '../0_common_config/lib/utils';
-import { Config } from '../0_common_config/lib/config';
+import { loadConfig } from '../../0_common_config/lib/utils';
+import { Config } from '../../0_common_config/lib/config';
 import * as cdk from 'aws-cdk-lib';
-import { VpcStack } from './lib/vpc-stack';
+import { VpcStack } from '../lib/vpc-stack';
 
 const app = new cdk.App();
 const env = app.node.tryGetContext('env')
