@@ -1,22 +1,20 @@
 #!/usr/bin/env node
-import { BuildConfig } from "./lib/build-config";
-import Utils from './lib/utils'
+import { loadConfig } from '../0_common_config/lib/utils';
+import { Config } from '../0_common_config/lib/config';
 import * as cdk from 'aws-cdk-lib';
 import { VpcStack } from './lib/vpc-stack';
 
-
-
 const app = new cdk.App();
-
+const env = app.node.tryGetContext('env')
 function Main() {
-    let buildConfig: BuildConfig = Utils.getConfig(app);
-    let stackName = buildConfig.App + "-" + buildConfig.Environment + "-vpc";
-    const vpcStack = new VpcStack(app, stackName, buildConfig,
+    const config: Config = loadConfig(env);
+    let stackName = config.App + "-" + config.Environment + "-vpc";
+    const vpcStack = new VpcStack(app, stackName, config,
         {
             env:
             {
-                region: buildConfig.AWSProfileRegion,
-                account: buildConfig.AWSAccountID
+                region: config.AWSProfileRegion,
+                account: config.AWSAccountID
             }
         });
     app.synth();

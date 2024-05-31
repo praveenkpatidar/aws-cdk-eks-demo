@@ -1,16 +1,16 @@
-import { BuildConfig } from "./build-config";
+import { Config } from "../../0_common_config/lib/config";
 import { Stack, StackProps, Tags } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
 
 export class VpcStack extends Stack {
-  constructor(scope: Construct, id: string, buildConfig: BuildConfig, props?: StackProps,) {
+  constructor(scope: Construct, id: string, config: Config, props?: StackProps,) {
     super(scope, id, props);
     const vpc = new ec2.Vpc(this, 'vpc', {
       maxAzs: 2,
-      ipAddresses: ec2.IpAddresses.cidr(buildConfig.Networking.VPCCidr),
-      vpcName: buildConfig.App + "-" + buildConfig.Environment + "-vpc",
+      ipAddresses: ec2.IpAddresses.cidr(config.Networking.VPCCidr),
+      vpcName: config.App + "-" + config.Environment + "-vpc",
       subnetConfiguration: [
         {
           cidrMask: 23,
@@ -26,7 +26,7 @@ export class VpcStack extends Stack {
     })
 
     // Tagging all subnetfor EKSKSTags
-    if (buildConfig.Networking.EKSTags) {
+    if (config.Networking.EKSTags) {
       for (const subnet of vpc.publicSubnets) {
         Tags.of(subnet).add(
           "kubernetes.io/role/elb",

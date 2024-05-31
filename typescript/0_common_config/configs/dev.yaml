@@ -2,8 +2,9 @@
 AWSAccountID: "354334841216"
 AWSProfileName: "sandpit2"
 Environment: "dev"
-Version: "1.0.0"
-EKSVersion: "1.28"
+Eks:
+  EKSVersion: "1.29"
+  CoreNodeCount: "1"
 Networking:
   VPCCidr: 10.0.0.0/20
   EKSTags: 'true'
