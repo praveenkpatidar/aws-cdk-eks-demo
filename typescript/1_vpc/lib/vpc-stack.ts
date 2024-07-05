@@ -1,43 +1,45 @@
-import { Config } from "../../0_common_config/lib/config";
-import { Stack, StackProps, Tags } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
-
+import {
+  BuildSchemaType,
+  CommonSchemaType,
+} from "../../0_common-config/lib/schema";
+import { Stack, StackProps, Tags } from "aws-cdk-lib";
+import { Construct } from "constructs";
+import * as ec2 from "aws-cdk-lib/aws-ec2";
 
 export class VpcStack extends Stack {
-  constructor(scope: Construct, id: string, config: Config, props?: StackProps,) {
+  constructor(
+    scope: Construct,
+    id: string,
+    buildConfig: BuildSchemaType,
+    commonConfig: CommonSchemaType,
+    props?: StackProps,
+  ) {
     super(scope, id, props);
-    const vpc = new ec2.Vpc(this, 'vpc', {
-      maxAzs: 2,
-      ipAddresses: ec2.IpAddresses.cidr(config.Networking.VPCCidr),
-      vpcName: config.App + "-" + config.Environment + "-vpc",
+    const vpc = new ec2.Vpc(this, "vpc", {
+      maxAzs: buildConfig.Networking.MaxAzs,
+      ipAddresses: ec2.IpAddresses.cidr(buildConfig.Networking.VPCCidr),
+      vpcName: commonConfig.App + "-" + buildConfig.Environment + "-vpc",
       subnetConfiguration: [
         {
           cidrMask: 23,
-          name: 'public',
+          name: "public",
           subnetType: ec2.SubnetType.PUBLIC,
         },
         {
           cidrMask: 23,
-          name: 'private',
+          name: "private",
           subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
-        }
-      ]
-    })
+        },
+      ],
+    });
 
     // Tagging all subnetfor EKSKSTags
-    if (config.Networking.EKSTags) {
+    if (buildConfig.Networking.EKSTags) {
       for (const subnet of vpc.publicSubnets) {
-        Tags.of(subnet).add(
-          "kubernetes.io/role/elb",
-          "1",
-        );
+        Tags.of(subnet).add("kubernetes.io/role/elb", "1");
       }
       for (const subnet of vpc.privateSubnets) {
-        Tags.of(subnet).add(
-          "kubernetes.io/role/internal-elb",
-          "1",
-        );
+        Tags.of(subnet).add("kubernetes.io/role/internal-elb", "1");
       }
     }
   }
