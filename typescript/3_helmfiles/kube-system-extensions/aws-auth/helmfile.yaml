@@ -1,7 +1,0 @@
----
-releases:
-  - name: aws-auth
-    chart: localfolder-{{ requiredEnv "CLUSTER" }}
-
-  - name: common-rbac
-    chart: ./localfolder-common/

@@ -1,7 +1,0 @@
----
-
-default:
-  release_name: "aws-node-termination-handler"
-  version: "0.21.0"
-  chart: "eks/aws-node-termination-handler"
-  namespace: "kube-system-extensions"

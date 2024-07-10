@@ -59,10 +59,7 @@ export class KarpenterStack extends cdk.Stack {
             values: {
                 serviceAccount: {
                     create: false,
-                    name: karpenterServiceAccount.serviceAccountName,
-                    annotations: {
-
-                    }
+                    name: karpenterServiceAccount.serviceAccountName
                 },
                 tolerations: [
                     {

@@ -34,6 +34,12 @@ export class LoadBalancerControllerStack extends cdk.Stack {
             release: 'aws-load-balancer-controller',
             values: {
                 clusterName: cluster.clusterName,
+                tolerations: [
+                    {
+                        key: "node-role.kubernetes.io/master",
+                        effect: "NoSchedule"
+                    }
+                ],
                 serviceAccount: {
                     create: false,
                     name: sa.serviceAccountName,

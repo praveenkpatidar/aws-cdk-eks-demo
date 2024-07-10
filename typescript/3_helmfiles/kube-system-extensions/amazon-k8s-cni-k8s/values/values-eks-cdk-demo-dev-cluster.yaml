@@ -1,7 +1,0 @@
----
-env:
-  DISABLE_TCP_EARLY_DEMUX: "false"
-  # Reduce IP consumption
-  WARM_ENI_TARGET: "0"
-  MINIMUM_IP_TARGET: "12"
-  WARM_IP_TARGET: "2"

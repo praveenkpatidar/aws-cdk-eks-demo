@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: workloads
+  namespace: argocd
+spec:
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  generators:
+    - clusters: {}
+  template:
+    metadata:
+      name: workloads
+    spec:
+      project: default
+      source:
+        repoURL: "https://github.com/praveenkpatidar/gitops-helm-repo"
+        path: "helmfile/workload"
+        targetRevision: "HEAD"
+        auth:
+          secretRef:
+            name: github-secret
+            key: password
+      destination:
+        name: "{{name}}"
+      syncPolicy:
+        automated:
+          allowEmpty: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 60

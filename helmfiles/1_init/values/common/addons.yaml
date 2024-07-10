@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cluster-addons
+  namespace: argocd
+spec:
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  generators:
+    - clusters: {}
+  template:
+    metadata:
+      name: cluster-addons
+    spec:
+      project: default
+      source:
+        repoURL: "https://github.com/praveenkpatidar/gitops-helm-repo"
+        path: "helmfile/addons"
+        targetRevision: "HEAD"
+        auth:
+          secretRef:
+            name: github-secret
+            key: password
+        directory:
+          recurse: true
+      destination:
+        namespace: argocd
+        name: "{{name}}"
+      syncPolicy:
+        automated: {}

@@ -1,0 +1,13 @@
+---
+repositories:
+  - name: argocd
+    url: https://argoproj.github.io/argo-helm
+
+releases:
+  - name: argocd
+    chart: "argocd/argo-cd"
+    namespace: "argocd"
+    version: "7.3.4"
+    values:
+      - ./values/common.yaml
+      - ./values/{{ requiredEnv "CLUSTER" }}.yaml

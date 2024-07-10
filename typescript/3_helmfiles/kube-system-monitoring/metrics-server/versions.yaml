@@ -1,7 +1,0 @@
----
-
-default:
-  chart: "metrics-server/metrics-server"
-  namespace: "kube-system-monitoring"
-  release_name: "metrics-server"
-  version: "3.8.3"

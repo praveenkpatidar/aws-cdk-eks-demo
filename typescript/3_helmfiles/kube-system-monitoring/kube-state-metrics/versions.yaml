@@ -1,8 +1,0 @@
----
-
-default:
-  chart: "prometheus-community/kube-state-metrics"
-  namespace: "kube-system-monitoring"
-  release_name: "kube-state-metrics"
-  version: "4.29.0"
-

@@ -1,0 +1,8 @@
+releases:
+  - name: init-argocd
+    namespace: argocd
+    chart: ./values/
+# In case cluster specific bootstrap required here is the way
+#  - name: bootstrap-secrets
+#    namespace: kube-system
+#    chart: ./localfolder-bootstrap/{{ requiredEnv "CLUSTER" }}/
