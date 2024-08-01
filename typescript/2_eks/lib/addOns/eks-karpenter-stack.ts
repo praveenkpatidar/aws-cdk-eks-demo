@@ -13,7 +13,7 @@ import { getKarpenterControllerPolicyDocument } from '../../utils/karpenterIam';
 
 export interface KarpenterStackProps extends cdk.StackProps {
 }
-
+// NOTE: YOU MUST ADD KARPENTER NODEROLE in AWS AUTH (use EKS Stack to add that)
 export class KarpenterStack extends cdk.Stack {
     constructor(scope: cdk.App, id: string, buildConfig: BuildSchemaType,
         commonConfig: CommonSchemaType, props: KarpenterStackProps,) {
