@@ -1,79 +1,138 @@
 import * as cdk from 'aws-cdk-lib';
-import * as eks from 'aws-cdk-lib/aws-eks';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
+import { SqsQueue } from 'aws-cdk-lib/aws-events-targets';
+import { Rule } from 'aws-cdk-lib/aws-events';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import {
+    BuildSchemaType,
+    CommonSchemaType,
+} from "../../../0_common-config/lib/schema";
+import { lookUpEksCluster } from '../../utils/getEksCluster';
+import { createServiceAccountIrsaRole } from '../../utils/serviceAccountIrsaRole';
+import { getKarpenterControllerPolicyDocument } from '../../utils/karpenterIam';
 
 export interface KarpenterStackProps extends cdk.StackProps {
-    cluster: eks.Cluster;
 }
 
 export class KarpenterStack extends cdk.Stack {
-
-    constructor(scope: cdk.App, id: string, props: KarpenterStackProps) {
+    constructor(scope: cdk.App, id: string, buildConfig: BuildSchemaType,
+        commonConfig: CommonSchemaType, props: KarpenterStackProps,) {
         super(scope, id, props);
+        const namePrefix = `${commonConfig.App}-${buildConfig.Environment}`;
+        const cluster = lookUpEksCluster(this, namePrefix);
+        const namespace = 'karpenter';
+        const serviceAccountName = 'karpenter';
+        // if SPOT instances are not going to be used then make it false.
+        const interruption = true
 
-        const { cluster } = props;
+        // Create IRSA Role with Service Account and Namespace
+        const serviceAccountIrsaRole = createServiceAccountIrsaRole(
+            this,
+            cluster,
+            `${namePrefix}-KarpenterIrsaRole`,
+            namespace,
+            serviceAccountName,
+            [],
+            true
+        )
 
-        // Create a Kubernetes service account for Karpenter
-        const karpenterServiceAccount = cluster.addServiceAccount('karpenterServiceAccount', {
-            name: 'karpenter-sa',
-            namespace: 'karpenter'
+        const controllerPolicyDocument = getKarpenterControllerPolicyDocument(this);
+        const karpenterIrsaPolicy = new iam.ManagedPolicy(this, 'KarpenterPolicy', {
+            managedPolicyName: `${commonConfig.App}-${buildConfig.Environment}-KarpenterPolicy`,
+            roles: [serviceAccountIrsaRole],
+            document: controllerPolicyDocument,
         });
-
-
-        const karpenterPolicy = new iam.ManagedPolicy(this, 'KarpenterPolicy', {
-            managedPolicyName: 'KarpenterPolicy',
-            statements: [
-                new iam.PolicyStatement({
-                    actions: [
-                        'ec2:CreateLaunchTemplate',
-                        'ec2:CreateFleet',
-                        'ec2:RunInstances',
-                        'ec2:CreateTags',
-                        'ec2:TerminateInstances',
-                        'ec2:DescribeLaunchTemplates',
-                        'ec2:DescribeInstances',
-                        'ec2:DescribeSecurityGroups',
-                        'ec2:DescribeSubnets',
-                        'ec2:DescribeInstanceTypes',
-                        'eks:DescribeNodegroup',
-                        'eks:DescribeCluster',
-                        'iam:PassRole',
-                    ],
-                    resources: ['*'],
-                }),
-            ],
-        });
-        karpenterPolicy.node.addDependency(karpenterServiceAccount);
-
-        karpenterServiceAccount.role.addManagedPolicy(
-            iam.ManagedPolicy.fromAwsManagedPolicyName(karpenterPolicy.managedPolicyName)
-        );
         // Install Karpenter using Helm
+        // Ref: https://github.com/aws/karpenter-provider-aws/tree/release-v0.36.2/charts/karpenter
         const karpenterChart = cluster.addHelmChart('KarpenterHelmChart', {
             chart: 'karpenter',
             repository: 'oci://public.ecr.aws/karpenter/karpenter',
-            namespace: 'karpenter',
-            release: 'karpenter',
-            version: '0.36.0', // Adjust version as needed
+            namespace: namespace,
+            release: serviceAccountName,
+            version: '0.36.2', // Adjust version as needed
             values: {
+                replicas: 1, // Parameterize
+                settings:
+                {
+                    clusterName: cluster.clusterName,
+                    clusterEndpoint: cluster.clusterEndpoint,
+                    interruptionQueue: interruption ? `${namePrefix}-karpenter-interruption` : ""
+                },
                 serviceAccount: {
                     create: false,
-                    name: karpenterServiceAccount.serviceAccountName
+                    name: "karpenter"
                 },
                 tolerations: [
                     {
-                        key: "node-role.kubernetes.io/master",
-                        effect: "NoSchedule"
+                        key: "CriticalAddonsOnly",
+                        operator: "Exists"
                     }
                 ],
-                clusterName: cluster.clusterName,
-                clusterEndpoint: cluster.clusterEndpoint,
-                aws: {
-                    defaultInstanceProfile: 'KarpenterNodeInstanceProfile', // Ensure this IAM instance profile exists
-                },
             },
         });
-        karpenterChart.node.addDependency(karpenterServiceAccount);
+        karpenterChart.node.addDependency(serviceAccountIrsaRole);
+
+        // Native Interuption Handling
+        if (interruption) {
+            // Create Interruption Queue
+            const queue = new sqs.Queue(cluster.stack, 'karpenter-queue', {
+                queueName: `${namePrefix}-karpenter-interruption`,
+                retentionPeriod: cdk.Duration.seconds(300),
+            });
+            queue.addToResourcePolicy(new iam.PolicyStatement({
+                sid: 'EC2InterruptionPolicy',
+                effect: iam.Effect.ALLOW,
+                principals: [
+                    new iam.ServicePrincipal('sqs.amazonaws.com'),
+                    new iam.ServicePrincipal('events.amazonaws.com'),
+                ],
+                actions: [
+                    "sqs:SendMessage"
+                ],
+                resources: [`${queue.queueArn}`]
+            }));
+
+            // Add Interruption Rules
+            new Rule(cluster.stack, 'schedule-change-rule', {
+                eventPattern: {
+                    source: ["aws.health"],
+                    detailType: ['AWS Health Event']
+                },
+            }).addTarget(new SqsQueue(queue));
+
+            new Rule(cluster.stack, 'spot-interruption-rule', {
+                eventPattern: {
+                    source: ["aws.ec2"],
+                    detailType: ['EC2 Spot Instance Interruption Warning']
+                },
+            }).addTarget(new SqsQueue(queue));
+
+            new Rule(cluster.stack, 'rebalance-rule', {
+                eventPattern: {
+                    source: ["aws.ec2"],
+                    detailType: ['EC2 Instance Rebalance Recommendation']
+                },
+            }).addTarget(new SqsQueue(queue));
+
+            new Rule(cluster.stack, 'inst-state-change-rule', {
+                eventPattern: {
+                    source: ["aws.ec2"],
+                    detailType: ['C2 Instance State-change Notification']
+                },
+            }).addTarget(new SqsQueue(queue));
+
+            // Add policy to the node role to allow access to the Interruption Queue
+            const interruptionQueueStatement = new iam.PolicyStatement({
+                effect: iam.Effect.ALLOW,
+                actions: [
+                    "sqs:DeleteMessage",
+                    "sqs:GetQueueUrl",
+                    "sqs:GetQueueAttributes",
+                    "sqs:ReceiveMessage"
+                ],
+                resources: [`${queue.queueArn}`]
+            });
+            controllerPolicyDocument.addStatements(interruptionQueueStatement);
+        }
     }
 }

@@ -9,12 +9,11 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { KubernetesVersion, NodegroupAmiType, Cluster } from 'aws-cdk-lib/aws-eks';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import { Values } from "aws-cdk-lib/aws-cloudwatch";
-export interface EksStackProps extends cdk.StackProps {
+import * as ssm from "aws-cdk-lib/aws-ssm";
+export interface EksStackProps extends StackProps {
 
 }
 export class EksStack extends Stack {
-    public readonly cluster: Cluster;
     constructor(
         scope: Construct,
         id: string,
@@ -23,7 +22,7 @@ export class EksStack extends Stack {
         props?: EksStackProps,
     ) {
         super(scope, id, props);
-
+        const namePrefix = `${commonConfig.App}-${buildConfig.Environment}`
         blueprints.HelmAddOn.validateHelmVersions = true;
         blueprints.HelmAddOn.failOnVersionValidation = false;
         const nameTag = commonConfig.App + "-" + buildConfig.Environment
@@ -32,7 +31,17 @@ export class EksStack extends Stack {
             new blueprints.CoreDnsAddOn(),
             new blueprints.addons.KubeProxyAddOn(),
             new blueprints.addons.VpcCniAddOn(),
-            new blueprints.addons.EksPodIdentityAgentAddOn()
+            new blueprints.addons.EksPodIdentityAgentAddOn(),
+            new blueprints.addons.AwsLoadBalancerControllerAddOn({
+                values:
+                {
+                    tolerations: [{
+                        key: "CriticalAddonsOnly",
+                        operator: "Exists"
+                    }
+                    ]
+                }
+            })
         ];
         const adminRole = "arn:aws:iam::" + buildConfig.AWSAccountID + ":role/AWSReservedSSO_AdministratorAccess_03ad70a269de0fe1"  // Need to put this in parameters
         const adminIamRole = iam.Role.fromRoleArn(this, "AdminIamRole", adminRole);
@@ -66,7 +75,10 @@ export class EksStack extends Stack {
             version: KubernetesVersion.V1_30,
             vpcSubnets: [{ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }],
             mastersRole: blueprints.getResource(context => {
-                return new iam.Role(context.scope, 'AdminRole', { assumedBy: new iam.AccountRootPrincipal() });
+                return new iam.Role(context.scope, 'AdminRole', {
+                    roleName: `${namePrefix}-adminrole`,
+                    assumedBy: new iam.AccountRootPrincipal()
+                });
             }),
             managedNodeGroups: [
                 {
@@ -109,7 +121,40 @@ export class EksStack extends Stack {
             .enableControlPlaneLogTypes(blueprints.ControlPlaneLogType.API)
             .useDefaultSecretEncryption(true) // set to false to turn secret encryption off (non-production/demo cases)
             .teams(platformTeam)
-            .build(this, `${commonConfig.App}-${buildConfig.Environment}`);
+            .build(this, `${namePrefix}`);
 
+        const cluster = clusterStack.getClusterInfo().cluster as Cluster;
+        const providerArn = cluster.openIdConnectProvider.openIdConnectProviderArn
+        const ssmOicdProviderArn = new ssm.StringParameter(this, 'oicdProvider', {
+            parameterName: `${namePrefix}-oidc-provider-arn`,
+            stringValue: providerArn,
+        });
+        const ssmClusterEndpoint = new ssm.StringParameter(this, 'clusterEndpoint', {
+            parameterName: `${namePrefix}-cluster-endpoint`,
+            stringValue: cluster.clusterEndpoint,
+        });
+
+        // Add Karpenter node role to the aws-auth ConfigMap
+        const karpenterNodeRole = new iam.Role(clusterStack, 'karpenterNodeRole', {
+            roleName: `${namePrefix}-karpenterNodeRole`,
+            assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+            managedPolicies: [
+                iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonEKSWorkerNodePolicy"),
+                iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonEKS_CNI_Policy"),
+                iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonEC2ContainerRegistryReadOnly"),
+                iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore"),
+            ],
+        });
+
+        // Create the instance profile for the IAM role to be used in Karpenter Nodes
+        const instanceProfile = new iam.CfnInstanceProfile(clusterStack, 'InstanceProfile', {
+            roles: [karpenterNodeRole.roleName],
+            instanceProfileName: `${namePrefix}-karpenterNodeRole-instanceProfile`,
+        });
+        // Add Karpenter NodeRole in AWS-Auth
+        cluster.awsAuth.addRoleMapping(karpenterNodeRole, {
+            groups: ['system:bootstrappers', 'system:nodes'],
+            username: 'system:node:{{EC2PrivateDNSName}}',
+        });
     }
 }

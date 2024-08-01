@@ -8,7 +8,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as eks from 'aws-cdk-lib/aws-eks';
-
+import { KubectlV30Layer } from "@aws-cdk/lambda-layer-kubectl-v30";
 
 export interface EksStackProps extends cdk.StackProps {
 }
@@ -26,98 +26,77 @@ export class EksTraditionalStack extends Stack {
         super(scope, id, props);
 
         const nameTag = `${commonConfig.App}-${buildConfig.Environment}`
-        const vpc = ec2.Vpc.fromLookup(this, nameTag + "-vpc", {
+        const vpc1 = ec2.Vpc.fromLookup(this, nameTag + "-vpc", {
             isDefault: false,
             vpcName: `${nameTag}-vpc`
         })
 
-        // Create the EKS cluster
-        this.cluster = new eks.Cluster(this, 'cluster', {
+        // Create a new VPC for our cluster
+        const vpc = new ec2.Vpc(this, "EKSVpc", {
+            cidr: "10.0.0.0/20"
+        });
+
+        // Create Cluster with no default capacity (node group will be added later)
+        const eksCluster = new eks.Cluster(this, "EKSCluster", {
             vpc: vpc,
-            clusterName: `${nameTag}`,
-            vpcSubnets: [{ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }],
-            defaultCapacity: 0, // we want to manage capacity ourselves
+            clusterName: "demo-cluster",
+            defaultCapacity: 0,
+            mastersRole: new iam.Role(this, "eksAdminRole", {
+                assumedBy: new iam.AccountRootPrincipal(),
+            }),
             version: eks.KubernetesVersion.V1_30,
+            kubectlLayer: new KubectlV30Layer(this, "kubectl"),
+            ipFamily: eks.IpFamily.IP_V4,
             clusterLogging: [
-                eks.ClusterLoggingTypes.API,
+                // eks.ClusterLoggingTypes.API,
+                // eks.ClusterLoggingTypes.AUTHENTICATOR,
+                // eks.ClusterLoggingTypes.SCHEDULER,
                 eks.ClusterLoggingTypes.AUDIT,
-                eks.ClusterLoggingTypes.AUTHENTICATOR,
-                eks.ClusterLoggingTypes.CONTROLLER_MANAGER,
-                eks.ClusterLoggingTypes.SCHEDULER,
+                // eks.ClusterLoggingTypes.CONTROLLER_MANAGER,
             ],
+            outputClusterName: true,
+            outputConfigCommand: true,
         });
 
-        // Add CoreDNS add-on
-        new eks.CfnAddon(this, 'CoreDnsAddon', {
-            addonName: 'coredns',
-            clusterName: this.cluster.clusterName,
-            addonVersion: 'v1.11.1-eksbuild.8', // Adjust version as needed
+        eksCluster.addNodegroupCapacity("custom-node-group", {
+            amiType: eks.NodegroupAmiType.AL2_X86_64,
+            instanceTypes: [new ec2.InstanceType("m5.large")],
+            desiredSize: 2,
+            diskSize: 20,
+            nodeRole: new iam.Role(this, "eksClusterNodeGroupRole", {
+                roleName: "eksClusterNodeGroupRole",
+                assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"),
+                managedPolicies: [
+                    iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonEKSWorkerNodePolicy"),
+                    iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonEC2ContainerRegistryReadOnly"),
+                    iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonEKS_CNI_Policy"),
+                    iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore"),
+                ],
+            }),
         });
 
-        // Add KubeProxy add-on
-        new eks.CfnAddon(this, 'KubeProxyAddon', {
-            addonName: 'kube-proxy',
-            clusterName: this.cluster.clusterName,
-            addonVersion: 'v1.30.0-eksbuild.3', // Adjust version as needed
+        // Fargate
+        const myProfile = new eks.FargateProfile(this, 'myProfile', {
+            cluster: eksCluster,
+            selectors: [{ namespace: 'kube-system' }],
         });
 
-        // Add VPC CNI add-on
-        new eks.CfnAddon(this, 'VpcCniAddon', {
-            addonName: 'vpc-cni',
-            clusterName: this.cluster.clusterName,
-            addonVersion: 'v1.18.1-eksbuild.3', // Adjust version as needed
+        // Managed Addon: kube-proxy
+        const kubeProxy = new eks.CfnAddon(this, "addonKubeProxy", {
+            addonName: "kube-proxy",
+            clusterName: eksCluster.clusterName,
         });
 
-        // Add Pod Identity Webhook add-on
-        /* new eks.CfnAddon(this, 'PodIdentityAddon', {
-             addonName: 'eks-pod-identity-agent',
-             clusterName: this.cluster.clusterName,
-             addonVersion: 'v1.3.0-eksbuild.1', // Adjust version as needed
-         });
-         */
-
-        // Create nodegroup role
-        const nodegroupRole = new iam.Role(this, 'NodegroupRole', {
-            roleName: `${nameTag}-NodegroupRole`,
-            // Add any necessary permissions here
-            assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
-            managedPolicies: [
-                iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEKSWorkerNodePolicy'),
-                iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryReadOnly'),
-                iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEKS_CNI_Policy'),
-                iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'),
-                iam.ManagedPolicy.fromAwsManagedPolicyName('CloudWatchAgentServerPolicy')
-            ],
+        // Managed Addon: coredns
+        const coreDns = new eks.CfnAddon(this, "addonCoreDns", {
+            addonName: "coredns",
+            clusterName: eksCluster.clusterName,
         });
 
-        // Create a node group
-        this.cluster.addNodegroupCapacity("ClusterCoreNodeGroup", {
-            instanceTypes: [new ec2.InstanceType('t2.medium')],
-            nodegroupName: `${nameTag}-cluster-core-ng`,
-            desiredSize: 1,
-            minSize: 1,
-            maxSize: 2,
-            nodeRole: nodegroupRole,
-            subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-            // You can pass Custom Tags to Launch Templates which gets propagated to worker nodes.
-            tags: {
-                "Name": nameTag + "-core-nodegroup",
-                "Type": "Managed-Node-Group",
-                "LaunchTemplate": "Custom",
-                "Instance": "SPOT", // Should be OnDemand but for cost saving let it be Spot
-                "Project": commonConfig.App
-            },
-            labels: {
-                "dedicated": "core"
-            },
-            taints: [{
-                key: "node-role.kubernetes.io/master",
-                effect: cdk.aws_eks.TaintEffect.NO_SCHEDULE
-            }]
+        // Managed Addon: vpc-cni
+        const vpcCni = new eks.CfnAddon(this, "addonVpcCni", {
+            addonName: "vpc-cni",
+            clusterName: eksCluster.clusterName,
         });
-
-        // Adding role to aws-auth
-        const role = iam.Role.fromRoleArn(this, 'MyRole', `arn:aws:iam::${buildConfig.AWSAccountID}:role/WSReservedSSO_AdministratorAccess_03ad70a269de0fe1`);
-        this.cluster.awsAuth.addMastersRole(role);
     }
 }
