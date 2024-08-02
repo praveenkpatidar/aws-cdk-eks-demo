@@ -1,17 +1,20 @@
 # yaml-language-server: $schema=../schemas/build-schema.json
 ---
-AWSAccountID: "123456789013"
-Environment: "test"
+awsAccountID: "123456789013"
+environment: "test"
 
-Networking:
-  VPCCidr: 10.0.0.0/20
-  EKSTags: true
-  MaxAzs: 3
+networking:
+  vpcCidr: 10.0.0.0/20
+  eksTags: true
+  maxAzs: 2
 
-Eks:
-  EKSVersion: "1.30"
-  CoreNodeCount: 1
-  EksAddOns:
+eksConfig:
+  eksVersion: "1.30"
+  coreNode:
+    maxCount: 1
+    minCount: 1
+    instance: "SPOT"
+  eksAddOns:
     karpenter:
       version: "0.36.2"
     kubePrometheusStack:

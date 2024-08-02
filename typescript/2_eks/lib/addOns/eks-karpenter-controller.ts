@@ -9,13 +9,13 @@ import { getKarpenterControllerPolicyDocument } from "./iam-templates/karpenterI
 import { CommonStackProps, coreTolerations } from "../../utils/constants";
 import { createNamespace } from "../../utils/createNamespace";
 
-export interface KarpenterStackProps extends CommonStackProps {}
+export interface KarpenterStackProps extends CommonStackProps { }
 
 export class KarpenterStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props: KarpenterStackProps) {
     super(scope, id, props);
-    const namePrefix = `${props.commonConfig.App}-${props.buildConfig.Environment}`;
-    const eksConfig = props.buildConfig.Eks;
+    const namePrefix = `${props.commonConfig.app}-${props.buildConfig.environment}`;
+    const eksConfig = props.buildConfig.eksConfig;
     const cluster = lookUpEksCluster(this, namePrefix);
     const namespaceName = "karpenter";
     const serviceAccountName = "karpenter";
@@ -50,7 +50,7 @@ export class KarpenterStack extends cdk.Stack {
       repository: "oci://public.ecr.aws/karpenter/karpenter",
       namespace: namespaceName,
       release: serviceAccountName,
-      version: eksConfig.EksAddOns.karpenter.version, // Adjust version as needed
+      version: eksConfig.eksAddOns.karpenter.version, // Adjust version as needed
       values: {
         replicas: 1, // Parameterize
         settings: {

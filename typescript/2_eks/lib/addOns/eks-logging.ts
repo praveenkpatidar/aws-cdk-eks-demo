@@ -10,16 +10,16 @@ import {
   PolicyStatement,
 } from "aws-cdk-lib/aws-iam";
 
-export interface LoggingStackProps extends CommonStackProps {}
+export interface LoggingStackProps extends CommonStackProps { }
 
 export class LoggingStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props: LoggingStackProps) {
     super(scope, id, props);
-    const namePrefix = `${props.commonConfig.App}-${props.buildConfig.Environment}`;
+    const namePrefix = `${props.commonConfig.app}-${props.buildConfig.environment}`;
     const cluster = lookUpEksCluster(this, namePrefix);
     const namespaceName = "logging";
     const serviceAccountName = "logging";
-    const eksConfig = props.buildConfig.Eks;
+    const eksConfig = props.buildConfig.eksConfig;
     // Create Namespace
     const namespace = createNamespace(this, cluster, namespaceName);
     // Create IRSA Role with Service Account
@@ -57,7 +57,7 @@ export class LoggingStack extends cdk.Stack {
       repository: "https://aws.github.io/eks-charts",
       namespace: namespaceName,
       release: "aws-for-fluent-bit",
-      version: eksConfig.EksAddOns.awsForFluentBit.version, // Adjust version as needed
+      version: eksConfig.eksAddOns.awsForFluentBit.version, // Adjust version as needed
       values: {
         serviceAccount: {
           create: false,
@@ -67,7 +67,7 @@ export class LoggingStack extends cdk.Stack {
         cloudWatch: {
           enabled: true,
           logGroupName: `/aws/eks/${namePrefix}/fluent-bit-logs`,
-          region: props.commonConfig.AWSRegion,
+          region: props.commonConfig.awsRegion,
         },
       },
     });

@@ -17,11 +17,13 @@ if (!envName) {
 const buildConfig: BuildSchemaType = loadConfig(envName, buildSchema);
 const commonConfig: CommonSchemaType = loadConfig("common", commonSchema);
 
-let stackName = commonConfig.App + "-" + envName + "-vpc";
+let stackName = commonConfig.app + "-" + envName + "-vpc";
 console.log(stackName);
+
+
 const vpcStack = new VpcStack(app, stackName, buildConfig, commonConfig, {
     env: {
-        region: commonConfig.AWSRegion,
-        account: buildConfig.AWSAccountID,
+        region: commonConfig.awsRegion,
+        account: buildConfig.awsAccountID,
     },
 });

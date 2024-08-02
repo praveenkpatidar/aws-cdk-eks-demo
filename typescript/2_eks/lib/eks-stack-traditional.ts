@@ -10,7 +10,7 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as eks from "aws-cdk-lib/aws-eks";
 import { KubectlV30Layer } from "@aws-cdk/lambda-layer-kubectl-v30";
 
-export interface EksStackProps extends cdk.StackProps {}
+export interface EksStackProps extends cdk.StackProps { }
 
 export class EksTraditionalStack extends Stack {
   public readonly cluster: eks.Cluster;
@@ -23,7 +23,7 @@ export class EksTraditionalStack extends Stack {
   ) {
     super(scope, id, props);
 
-    const nameTag = `${commonConfig.App}-${buildConfig.Environment}`;
+    const nameTag = `${commonConfig.app}-${buildConfig.environment}`;
     const vpc1 = ec2.Vpc.fromLookup(this, nameTag + "-vpc", {
       isDefault: false,
       vpcName: `${nameTag}-vpc`,

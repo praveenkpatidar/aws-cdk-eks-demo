@@ -3,12 +3,12 @@ import { KubernetesManifest } from "aws-cdk-lib/aws-eks";
 import { lookUpEksCluster } from "../../utils/getEksCluster";
 import { CommonStackProps } from "../../utils/constants";
 
-export interface KarpenterNodesStackProps extends CommonStackProps {}
+export interface KarpenterNodesStackProps extends CommonStackProps { }
 // NOTE: Karpenter Node Role configured in EKS Stack to be used here. (Refer - EKS Stack)
 export class KarpenterNodesStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props: KarpenterNodesStackProps) {
     super(scope, id, props);
-    const namePrefix = `${props.commonConfig.App}-${props.buildConfig.Environment}`;
+    const namePrefix = `${props.commonConfig.app}-${props.buildConfig.environment}`;
     const cluster = lookUpEksCluster(this, namePrefix);
     // Use the Karpenter NodeRole defined in EKS Stake.
     const defaultEc2NodeClass = {

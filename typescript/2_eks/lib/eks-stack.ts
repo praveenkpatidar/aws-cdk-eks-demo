@@ -15,12 +15,12 @@ import {
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import { CommonStackProps, coreTolerations } from "../utils/constants";
-export interface EksStackProps extends CommonStackProps {}
+export interface EksStackProps extends CommonStackProps { }
 export class EksStack extends Stack {
   constructor(scope: Construct, id: string, props: EksStackProps) {
     super(scope, id, props);
-    const namePrefix = `${props.commonConfig.App}-${props.buildConfig.Environment}`;
-    const eksConfig = props.buildConfig.Eks;
+    const namePrefix = `${props.commonConfig.app}-${props.buildConfig.environment}`;
+    const eksConfig = props.buildConfig.eksConfig;
     blueprints.HelmAddOn.validateHelmVersions = true;
     blueprints.HelmAddOn.failOnVersionValidation = false;
     const nameTag = namePrefix;
@@ -38,7 +38,7 @@ export class EksStack extends Stack {
     ];
     const adminRole =
       "arn:aws:iam::" +
-      props.buildConfig.AWSAccountID +
+      props.buildConfig.awsAccountID +
       ":role/AWSReservedSSO_AdministratorAccess_03ad70a269de0fe1"; // Need to put this in parameters
     const nodeRole = new blueprints.CreateRoleProvider(
       "node-role",
@@ -62,8 +62,8 @@ export class EksStack extends Stack {
 
     const metaStack = new cdk.Stack(this, nameTag + "-vpc-metadata", {
       env: {
-        region: props.commonConfig.AWSRegion,
-        account: props.buildConfig.AWSAccountID,
+        region: props.commonConfig.awsRegion,
+        account: props.buildConfig.awsAccountID,
       },
     });
 
@@ -76,7 +76,7 @@ export class EksStack extends Stack {
       // Temp Arrangement to drive the EKSVersion. With new Version the LamndaLayer also need to be changed.
       // If condition can keep 2 versions between the environments.
       version:
-        eksConfig.EKSVersion == "1.30"
+        eksConfig.eksVersion == "1.30"
           ? KubernetesVersion.V1_30
           : KubernetesVersion.V1_29,
       vpcSubnets: [{ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }],
@@ -90,8 +90,8 @@ export class EksStack extends Stack {
         {
           id: nameTag + "-cluster-nodegroup-1",
           amiType: NodegroupAmiType.AL2_X86_64,
-          desiredSize: 1,
-          maxSize: 1,
+          desiredSize: eksConfig.coreNode.minCount,
+          maxSize: eksConfig.coreNode.maxCount,
           nodeRole: blueprints.getNamedResource("node-role") as iam.Role,
           instanceTypes: [new ec2.InstanceType("m4.large")],
           nodeGroupSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
@@ -100,8 +100,8 @@ export class EksStack extends Stack {
               Name: nameTag + "-core-nodegroup",
               Type: "Managed-Node-Group",
               LaunchTemplate: "Custom",
-              Instance: "SPOT", // Should be OnDemand but for cost saving let it be Spot
-              Project: props.commonConfig.App,
+              Instance: eksConfig.coreNode.instance, // Should be OnDemand but for cost saving let it be Spot
+              Project: props.commonConfig.app,
             },
           },
           labels: {
@@ -118,8 +118,8 @@ export class EksStack extends Stack {
       ],
     });
     const clusterStack = blueprints.EksBlueprint.builder()
-      .account(props.buildConfig.AWSAccountID)
-      .region(props.commonConfig.AWSRegion)
+      .account(props.buildConfig.awsAccountID)
+      .region(props.commonConfig.awsRegion)
       .resourceProvider(
         blueprints.GlobalResources.Vpc,
         new blueprints.VpcProvider(Vpc.vpcId),

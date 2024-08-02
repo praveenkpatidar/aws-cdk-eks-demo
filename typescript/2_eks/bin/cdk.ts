@@ -9,8 +9,6 @@ import {
     loadConfig,
 } from "../../0_common-config";
 import { EksStack } from "../lib/eks-stack";
-//import { LoadBalancerControllerStack } from '../lib/addOns/eks-lb-controller';
-//import { PrometheusKubeStack } from '../lib/addOns/eks-prom-stack';
 import { KarpenterStack } from "../lib/Addons/eks-karpenter-controller";
 import { KarpenterNodesStack } from "../lib/Addons/eks-karpenter-nodes";
 import { LoggingStack } from "../lib/Addons/eks-logging";
@@ -24,20 +22,21 @@ if (!envName) {
 const buildConfig: BuildSchemaType = loadConfig(envName, buildSchema);
 const commonConfig: CommonSchemaType = loadConfig("common", commonSchema);
 
-const nameTag = `${commonConfig.App}-${envName}`;
+const nameTag = `${commonConfig.app}-${envName}`;
 
 const config = {
     buildConfig,
     commonConfig,
     env: {
-        region: commonConfig.AWSRegion,
-        account: buildConfig.AWSAccountID,
+        region: commonConfig.awsRegion,
+        account: buildConfig.awsAccountID,
     },
 };
 
+// Main EKS Stack
 const eksStack = new EksStack(app, `${nameTag}-eks`, config);
-// Add Prometheus Kube Stack
 
+// Karpenter Controller Stack
 const karpenterStack = new KarpenterStack(
     app,
     `${nameTag}-karpenter-controller`,
@@ -45,6 +44,7 @@ const karpenterStack = new KarpenterStack(
 );
 karpenterStack.node.addDependency(eksStack);
 
+// Karpenter Nodes
 const karpenterNodeStack = new KarpenterNodesStack(
     app,
     `${nameTag}-karpenter-nodes`,
@@ -53,9 +53,11 @@ const karpenterNodeStack = new KarpenterNodesStack(
 karpenterNodeStack.node.addDependency(eksStack);
 karpenterNodeStack.node.addDependency(karpenterStack);
 
+// Logging Stack
 const loggingNodeStack = new LoggingStack(app, `${nameTag}-logging`, config);
 loggingNodeStack.node.addDependency(eksStack);
 
+// Monitoring Stack
 const monitoringNodeStack = new MonitoringStack(
     app,
     `${nameTag}-monitoring`,

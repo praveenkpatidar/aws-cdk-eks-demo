@@ -16,9 +16,9 @@ export class VpcStack extends Stack {
   ) {
     super(scope, id, props);
     const vpc = new ec2.Vpc(this, "vpc", {
-      maxAzs: buildConfig.Networking.MaxAzs,
-      ipAddresses: ec2.IpAddresses.cidr(buildConfig.Networking.VPCCidr),
-      vpcName: commonConfig.App + "-" + buildConfig.Environment + "-vpc",
+      maxAzs: buildConfig.networking.maxAzs,
+      ipAddresses: ec2.IpAddresses.cidr(buildConfig.networking.vpcCidr),
+      vpcName: commonConfig.app + "-" + buildConfig.environment + "-vpc",
       subnetConfiguration: [
         {
           cidrMask: 23,
@@ -34,7 +34,7 @@ export class VpcStack extends Stack {
     });
 
     // Tagging all subnetfor EKSKSTags
-    if (buildConfig.Networking.EKSTags) {
+    if (buildConfig.networking.eksTags) {
       for (const subnet of vpc.publicSubnets) {
         Tags.of(subnet).add("kubernetes.io/role/elb", "1");
       }
