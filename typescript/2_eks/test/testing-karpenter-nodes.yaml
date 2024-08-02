@@ -16,8 +16,8 @@ spec:
           operator: In
           values: ["spot"]
         - key: karpenter.k8s.aws/instance-size
-          operator: NotIn
-          values: [nano, micro, small, medium, large]
+          operator: In
+          values: [medium, large] # Keeping it small for sandpit
   limits:
     cpu: 1000
     memory: 1000Gi

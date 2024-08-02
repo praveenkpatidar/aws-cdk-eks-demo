@@ -6,17 +6,19 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
 ## Useful commands
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk synth`       emits the synthesized CloudFormation template
+- `npm run build` compile typescript to js
+- `npm run watch` watch for changes and compile
+- `npm run test` perform the jest unit tests
+- `cdk deploy` deploy this stack to your default AWS account/region
+- `cdk diff` compare deployed stack with current state
+- `cdk synth` emits the synthesized CloudFormation template
 
 # Sample commands
-aws sso login --profile sandpit2
-cdk deploy -c config=dev --profile=sandpit2 --all
+
+Setup the AWS Credentials (if profile selected then) use below command
+
+    `cdk deploy -c envName=dev --profile=<profileName> --all`
 
 If master Role is working then use below command to kube config or use stack output.
 
-aws eks update-kubeconfig --name eks-cdk-demo-devcluster --region ap-southeast-2  --profile sandpit2
+aws eks update-kubeconfig --name eks-cdk-demo-devcluster --region ap-southeast-2 --profile sandpit2
