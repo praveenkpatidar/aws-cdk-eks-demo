@@ -2,10 +2,20 @@
 ---
 AWSAccountID: "354334841216"
 Environment: "dev"
-Eks:
-  EKSVersion: "1.29"
-  CoreNodeCount: 1
 Networking:
   VPCCidr: 10.0.0.0/20
   EKSTags: true
   MaxAzs: 2
+
+Eks:
+  EKSVersion: "1.30"
+  CoreNodeCount: 1
+  EksAddOns:
+    karpenter:
+      version: "0.36.2"
+    kubePrometheusStack:
+      version: "61.6.1"
+    metricsServer:
+      version: "3.12.1"
+    awsForFluentBit:
+      version: "0.1.34"

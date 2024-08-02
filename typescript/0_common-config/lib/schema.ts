@@ -13,6 +13,20 @@ export const commonSchema = z.object({
 const eksSchema = z.object({
     EKSVersion: z.string(),
     CoreNodeCount: z.number(),
+    EksAddOns: z.object({
+        karpenter: z.object({
+            version: z.string(),
+        }),
+        kubePrometheusStack: z.object({
+            version: z.string(),
+        }),
+        metricsServer: z.object({
+            version: z.string(),
+        }),
+        awsForFluentBit: z.object({
+            version: z.string(),
+        }),
+    })
 }).strict();
 
 // Define the schema for Networking
