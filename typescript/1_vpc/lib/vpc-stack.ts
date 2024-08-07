@@ -7,14 +7,10 @@ import { Construct } from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { CommonStackProps } from "../utils/constants";
 
-export interface VpcStackProps extends CommonStackProps { }
+export interface VpcStackProps extends CommonStackProps {}
 
 export class VpcStack extends Stack {
-  constructor(
-    scope: Construct,
-    id: string,
-    props: VpcStackProps,
-  ) {
+  constructor(scope: Construct, id: string, props: VpcStackProps) {
     super(scope, id, props);
     const vpc = new ec2.Vpc(this, "vpc", {
       maxAzs: props.buildConfig.networking.maxAzs,

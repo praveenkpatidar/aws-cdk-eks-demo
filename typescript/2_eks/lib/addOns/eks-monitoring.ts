@@ -40,6 +40,14 @@ export class MonitoringStack extends cdk.Stack {
         },
         prometheusOperator: {
           tolerations: [coreTolerations],
+          admissionWebhooks: {
+            deployment: {
+              tolerations: [coreTolerations],
+            },
+            patch: {
+              tolerations: [coreTolerations],
+            }
+          }
         },
         prometheus: {
           prometheusSpec: {

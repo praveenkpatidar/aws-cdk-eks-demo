@@ -9,7 +9,7 @@ import { getKarpenterControllerPolicyDocument } from "./iam-templates/karpenterI
 import { CommonStackProps, coreTolerations } from "../../utils/constants";
 import { createNamespace } from "../../utils/createNamespace";
 
-export interface KarpenterStackProps extends CommonStackProps { }
+export interface KarpenterStackProps extends CommonStackProps {}
 
 export class KarpenterStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props: KarpenterStackProps) {

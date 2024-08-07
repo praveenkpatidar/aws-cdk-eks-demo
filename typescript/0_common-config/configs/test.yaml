@@ -10,6 +10,7 @@ networking:
 
 eksConfig:
   eksVersion: "1.30"
+  adminRoleName: "EksAdminROle" # Can be SSO Role or your Role
   coreNode:
     maxCount: 1
     minCount: 1

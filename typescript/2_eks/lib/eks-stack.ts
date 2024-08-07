@@ -15,7 +15,9 @@ import {
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import { CommonStackProps, coreTolerations } from "../utils/constants";
+
 export interface EksStackProps extends CommonStackProps { }
+
 export class EksStack extends Stack {
   constructor(scope: Construct, id: string, props: EksStackProps) {
     super(scope, id, props);
@@ -36,10 +38,9 @@ export class EksStack extends Stack {
         },
       }),
     ];
-    const adminRole =
-      "arn:aws:iam::" +
-      props.buildConfig.awsAccountID +
-      ":role/AWSReservedSSO_AdministratorAccess_03ad70a269de0fe1"; // Need to put this in parameters
+    const adminRoleArn = `arn:aws:iam::${props.buildConfig.awsAccountID}:role/${eksConfig.adminRoleName}`;
+    console.log(adminRoleArn)
+
     const nodeRole = new blueprints.CreateRoleProvider(
       "node-role",
       new iam.ServicePrincipal("ec2.amazonaws.com"),
@@ -57,7 +58,7 @@ export class EksStack extends Stack {
 
     const platformTeam = new blueprints.PlatformTeam({
       name: "platform-admin",
-      userRoleArn: adminRole,
+      userRoleArn: adminRoleArn,
     });
 
     const metaStack = new cdk.Stack(this, nameTag + "-vpc-metadata", {

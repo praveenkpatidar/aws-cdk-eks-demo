@@ -1,3 +1,5 @@
+// NOT IN USE
+
 import {
   BuildSchemaType,
   CommonSchemaType,
@@ -10,7 +12,7 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as eks from "aws-cdk-lib/aws-eks";
 import { KubectlV30Layer } from "@aws-cdk/lambda-layer-kubectl-v30";
 
-export interface EksStackProps extends cdk.StackProps { }
+export interface EksStackProps extends cdk.StackProps {}
 
 export class EksTraditionalStack extends Stack {
   public readonly cluster: eks.Cluster;

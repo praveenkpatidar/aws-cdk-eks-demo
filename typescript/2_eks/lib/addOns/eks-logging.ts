@@ -10,7 +10,9 @@ import {
   PolicyStatement,
 } from "aws-cdk-lib/aws-iam";
 
-export interface LoggingStackProps extends CommonStackProps { }
+export interface LoggingStackProps extends CommonStackProps {
+  // additional properties goes here
+}
 
 export class LoggingStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props: LoggingStackProps) {

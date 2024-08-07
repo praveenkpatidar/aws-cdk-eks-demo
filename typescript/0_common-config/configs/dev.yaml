@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../schemas/build-schema.json
 ---
-awsAccountID: "354334841216"
+awsAccountID: "123456789013"
 environment: "dev"
 
 networking:
@@ -10,6 +10,7 @@ networking:
 
 eksConfig:
   eksVersion: "1.30"
+  adminRoleName: "EksAdminRole" # Can be SSO Role or your Role
   coreNode:
     maxCount: 1
     minCount: 1
