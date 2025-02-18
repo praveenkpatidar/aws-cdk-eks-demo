@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../schemas/build-schema.json
 ---
-awsAccountID: "354334841216"
+awsAccountID: "123456789012"
 environment: "test"
 
 networking:
