@@ -13,6 +13,7 @@ import { KarpenterStack } from "../lib/Addons/eks-karpenter-controller";
 import { KarpenterNodesStack } from "../lib/Addons/eks-karpenter-nodes";
 import { LoggingStack } from "../lib/Addons/eks-logging";
 import { MonitoringStack } from "../lib/Addons/eks-monitoring";
+import { EfsStack } from "../lib/Addons/eks-efs"; // Import the EFS stack
 
 const app = new cdk.App();
 const envName = app.node.tryGetContext("envName");
@@ -32,9 +33,13 @@ const config = {
     account: buildConfig.awsAccountID,
   },
 };
+// Deploy the EFS Stack
+const efsStack = new EfsStack(app, `${nameTag}-efs`, config);
 
 // Main EKS Stack
 const eksStack = new EksStack(app, `${nameTag}-eks`, config);
+eksStack.node.addDependency(efsStack);
+
 
 // Karpenter Controller Stack
 const karpenterStack = new KarpenterStack(
@@ -64,3 +69,4 @@ const monitoringNodeStack = new MonitoringStack(
   config,
 );
 monitoringNodeStack.node.addDependency(eksStack);
+monitoringNodeStack.node.addDependency(efsStack);

@@ -10,6 +10,19 @@ export class MonitoringStack extends cdk.Stack {
     const namePrefix = `${props.commonConfig.app}-${props.buildConfig.environment}`;
     const cluster = lookUpEksCluster(this, namePrefix);
     const eksConfig = props.buildConfig.eksConfig;
+
+    // Create Persistent StorageClass for Prometheus
+    cluster.addManifest('PrometheusStorageClass', {
+      apiVersion: 'storage.k8s.io/v1',
+      kind: 'StorageClass',
+      metadata: { name: 'prometheus-sc' },
+      provisioner: 'efs.csi.aws.com', // Using EFS storage (or update based on your setup)
+      parameters: {
+        provisioningMode: 'efs-ap',
+        directoryPerms: '700',
+        fileSystemId: cdk.Fn.importValue('EfsFileSystemId'), // Import EFS FileSystem ID
+      },
+    });
     // Deploy the Metrics Server Kube Stack using Helm
     cluster.addHelmChart("MetricsServer", {
       chart: "metrics-server",
@@ -51,6 +64,20 @@ export class MonitoringStack extends cdk.Stack {
         },
         prometheus: {
           prometheusSpec: {
+            retention: '30d', // Retain metrics for 30 days
+            storageSpec: {
+              volumeClaimTemplate: {
+                spec: {
+                  storageClassName: 'prometheus-sc',
+                  accessModes: ['ReadWriteMany'], // EFS or NFS storage
+                  resources: {
+                    requests: {
+                      storage: '50Gi', // Adjust storage size as needed
+                    },
+                  },
+                },
+              },
+            },
             serviceMonitorSelector: {},
             tolerations: [coreTolerations],
           },

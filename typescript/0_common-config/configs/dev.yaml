@@ -10,11 +10,13 @@ networking:
 
 eksConfig:
   eksVersion: "1.30"
-  adminRoleName: "EksAdminRole" # Can be SSO Role or your Role
+  adminRoleName: "AWSReservedSSO_AdministratorAccess_03ad70a269de0fe1"
   coreNode:
     maxCount: 1
     minCount: 1
     instance: "SPOT"
+    instanceSize: "large"
+    instanceClass: "m5"
   eksAddOns:
     karpenter:
       version: "0.36.2"

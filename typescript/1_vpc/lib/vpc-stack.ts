@@ -2,7 +2,7 @@ import {
   BuildSchemaType,
   CommonSchemaType,
 } from "../../0_common-config/lib/schema";
-import { Stack, StackProps, Tags } from "aws-cdk-lib";
+import { Stack, StackProps, Tags, CfnOutput } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { CommonStackProps } from "../utils/constants";
@@ -10,9 +10,12 @@ import { CommonStackProps } from "../utils/constants";
 export interface VpcStackProps extends CommonStackProps {}
 
 export class VpcStack extends Stack {
+  public readonly vpc: ec2.Vpc;
+
   constructor(scope: Construct, id: string, props: VpcStackProps) {
     super(scope, id, props);
-    const vpc = new ec2.Vpc(this, "vpc", {
+
+    this.vpc = new ec2.Vpc(this, "vpc", {
       maxAzs: props.buildConfig.networking.maxAzs,
       ipAddresses: ec2.IpAddresses.cidr(props.buildConfig.networking.vpcCidr),
       vpcName: id,
@@ -32,12 +35,19 @@ export class VpcStack extends Stack {
 
     // Tagging all subnetfor EKSKSTags
     if (props.buildConfig.networking.eksTags) {
-      for (const subnet of vpc.publicSubnets) {
+      for (const subnet of this.vpc.publicSubnets) {
         Tags.of(subnet).add("kubernetes.io/role/elb", "1");
       }
-      for (const subnet of vpc.privateSubnets) {
+      for (const subnet of this.vpc.privateSubnets) {
         Tags.of(subnet).add("kubernetes.io/role/internal-elb", "1");
       }
     }
+
+    // Output the VPC ID with an export name
+    new CfnOutput(this, "VpcIdOutput", {
+      value: this.vpc.vpcId,
+      description: "The ID of the VPC used by the EKS Cluster",
+      exportName: `${id}-VpcId`, // Export name for cross-stack reference
+    });
   }
 }

@@ -70,12 +70,22 @@ export class KarpenterNodesStack extends cdk.Stack {
                 operator: "In",
                 values: ["medium", "large"], // Keeping it small for sandpit
               },
+              {
+                key: "karpenter.k8s.aws/instance-cpu",
+                operator: "In",
+                values: ["2", "4"],
+              },
+              {
+                key: "karpenter.k8s.aws/instance-family",
+                operator: "In",
+                values: ["r5", "m6g"],
+              },
             ],
           },
         },
         limits: {
-          cpu: 1000,
-          memory: "1000Gi",
+          cpu: 4000,
+          memory: "4000Gi",
         },
 
         /*
@@ -92,10 +102,15 @@ export class KarpenterNodesStack extends cdk.Stack {
         },
       },
     };
-    // Create NodePool and EC2NodeClass.
-    new KubernetesManifest(this, "karpenterDefaultNodePoolAndClass", {
+
+    new KubernetesManifest(this, "KarpenterEC2NodeClass", {
       cluster,
-      manifest: [defaultEc2NodeClass, defaultNodePool],
+      manifest: [defaultEc2NodeClass],
+    });
+    
+    new KubernetesManifest(this, "KarpenterNodePool", {
+      cluster,
+      manifest: [defaultNodePool],
     });
   }
 }

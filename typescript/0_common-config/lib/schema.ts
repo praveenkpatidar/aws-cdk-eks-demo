@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+import { InstanceClass, InstanceSize } from "aws-cdk-lib/aws-ec2";
 // CommonConfig
 export const commonSchema = z
   .object({
@@ -20,6 +20,8 @@ const eksSchema = z
       maxCount: z.number(),
       minCount: z.number(),
       instance: z.string(),
+      instanceSize: z.nativeEnum(InstanceSize),
+      instanceClass: z.nativeEnum(InstanceClass),
     }),
     eksAddOns: z.object({
       karpenter: z.object({

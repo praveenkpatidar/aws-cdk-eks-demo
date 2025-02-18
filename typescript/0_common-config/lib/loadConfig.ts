@@ -2,7 +2,6 @@ import * as fs from "fs";
 import * as yaml from "js-yaml";
 import * as z from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { buildSchema, commonSchema } from "./schema";
 import * as path from "path";
 
 function resolvePath(relativePath: string): string {

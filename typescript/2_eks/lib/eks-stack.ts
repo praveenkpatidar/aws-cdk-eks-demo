@@ -1,7 +1,3 @@
-import {
-  BuildSchemaType,
-  CommonSchemaType,
-} from "../../0_common-config/lib/schema";
 import { Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as blueprints from "@aws-quickstart/eks-blueprints";
@@ -15,6 +11,8 @@ import {
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import { CommonStackProps, coreTolerations } from "../utils/constants";
+import { lookupVpc } from '../utils/lookupVpc';
+import { Fn } from 'aws-cdk-lib';
 
 export interface EksStackProps extends CommonStackProps { }
 
@@ -32,6 +30,7 @@ export class EksStack extends Stack {
       new blueprints.addons.KubeProxyAddOn(),
       new blueprints.addons.VpcCniAddOn(),
       new blueprints.addons.EksPodIdentityAgentAddOn(),
+      new blueprints.addons.EfsCsiDriverAddOn(),
       new blueprints.addons.AwsLoadBalancerControllerAddOn({
         values: {
           tolerations: [coreTolerations],
@@ -61,17 +60,7 @@ export class EksStack extends Stack {
       userRoleArn: adminRoleArn,
     });
 
-    const metaStack = new cdk.Stack(this, nameTag + "-vpc-metadata", {
-      env: {
-        region: props.commonConfig.awsRegion,
-        account: props.buildConfig.awsAccountID,
-      },
-    });
-
-    const Vpc = ec2.Vpc.fromLookup(metaStack, nameTag + "-vpc", {
-      isDefault: false,
-      vpcName: nameTag + "-vpc",
-    });
+    const Vpc = lookupVpc(this, "Vpc", `${namePrefix}-vpc`);
 
     const clusterProvider = new blueprints.GenericClusterProvider({
       // Temp Arrangement to drive the EKSVersion. With new Version the LamndaLayer also need to be changed.
@@ -161,6 +150,9 @@ export class EksStack extends Stack {
         iam.ManagedPolicy.fromAwsManagedPolicyName(
           "AmazonSSMManagedInstanceCore",
         ),
+        iam.ManagedPolicy.fromAwsManagedPolicyName(
+          "service-role/AmazonEFSCSIDriverPolicy"
+        ),
       ],
     });
 
@@ -177,6 +169,24 @@ export class EksStack extends Stack {
     cluster.awsAuth.addRoleMapping(karpenterNodeRole, {
       groups: ["system:bootstrappers", "system:nodes"],
       username: "system:node:{{EC2PrivateDNSName}}",
+    });
+
+    // Import the EFS File System ID from the EFS stack
+    const efsFileSystemId = Fn.importValue('EfsFileSystemId');
+
+    // Create the EFS StorageClass manifest
+    cluster.addManifest('EfsStorageClass', {
+      apiVersion: 'storage.k8s.io/v1',
+      kind: 'StorageClass',
+      metadata: {
+        name: 'efs-sc',
+      },
+      provisioner: 'efs.csi.aws.com',
+      parameters: {
+        provisioningMode: 'efs-ap',
+        fileSystemId: efsFileSystemId, // Use the imported EFS ID
+        directoryPerms: '700', // Set directory permissions
+      },
     });
   }
 }
